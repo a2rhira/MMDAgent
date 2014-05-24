@@ -39,75 +39,89 @@
 /* POSSIBILITY OF SUCH DAMAGE.                                       */
 /* ----------------------------------------------------------------- */
 
-/* VIManager_Event: input message buffer */
-typedef struct _VIManager_Event {
-   char *type;
-   char *args;
-   struct _VIManager_Event *next;
-} VIManager_Event;
+/* definitions */
 
-/* VIManager_EventQueue: queue of VIManager_Event */
-typedef struct _VIManager_EventQueue {
-   VIManager_Event *head;
-   VIManager_Event *tail;
-} VIManager_EventQueue;
+#ifdef _WIN32
+#define EXPORT extern "C" __declspec(dllexport)
+#else
+#define EXPORT extern "C"
+#endif /* _WIN32 */
 
-typedef struct _VIManager_Link {
-   VIManager vim;
-   struct _VIManager_Link *next;
-} VIManager_Link;
+#define PLUGININTERFACE_NAME         "Interface"
+#define PLUGININTERFACE_STARTCOMMAND "IF_START"
+#define PLUGININTERFACE_STOPCOMMAND  "IF_STOP"
 
-/* VIManager_Thread: thread of VIManager */
-class VIManager_Thread
+/* headers */
+
+#include "MMDAgent.h"
+
+#include "Interface.h"
+#include "Interface_Thread.h"
+#include "Interface_Manager.h"
+
+/* variables */
+
+static Interface_Manager interface_manager;
+static bool enable;
+
+/* extAppStart: load amodels and start thread */
+EXPORT void extAppStart(MMDAgent *mmdagent)
 {
-private:
+   int len;
+   char dic[MMDAGENT_MAXBUFLEN];
+   char *config;
 
-   MMDAgent *m_mmdagent;
+   /* get dictionary directory name */
+   sprintf(dic, "%s%c%s", mmdagent->getConfigDirName(), MMDAGENT_DIRSEPARATOR, PLUGININTERFACE_NAME);
 
-   GLFWmutex m_mutex;
-   GLFWcond m_cond;
-   GLFWthread m_thread;
+   /* get config file */
+   config = MMDAgent_strdup(mmdagent->getConfigFileName());
+   len = MMDAgent_strlen(config);
 
-   int m_count;
+   /* load */
+   if (len > 4) {
+      config[len - 4] = '.';
+      config[len - 3] = 'x';
+      config[len - 2] = 'x';
+      config[len - 1] = 'x';
+      interface_manager.loadAndStart(mmdagent, dic, config);
+   }
 
-   bool m_kill;
+   if(config)
+      free(config);
 
-   VIManager_EventQueue eventQueue; /* queue of input message */
+   enable = true;
+   mmdagent->sendMessage(MMDAGENT_EVENT_PLUGINENABLE, "%s", PLUGININTERFACE_NAME);
+}
 
-   VIManager m_vim;           /* main FST */
-   VIManager_Link *m_sub;     /* sub FST */
-   VIManager_Link *m_add;     /* add FST */
-   VIManager_Logger m_logger; /* logger */
+/* extProcMessage: process message */
+EXPORT void extProcMessage(MMDAgent *mmdagent, const char *type, const char *args)
+{
+   if(enable == true) {
+      if(MMDAgent_strequal(type, MMDAGENT_COMMAND_PLUGINDISABLE)) {
+         if(MMDAgent_strequal(args, PLUGININTERFACE_NAME)) {
+            enable = false;
+            mmdagent->sendMessage(MMDAGENT_EVENT_PLUGINDISABLE, "%s", PLUGININTERFACE_NAME);
+         }
+      } else if (interface_manager.isRunning()) {
+         if (MMDAgent_strequal(type, PLUGININTERFACE_STARTCOMMAND)) {
+            interface_manager.start(args);
+         } else if (MMDAgent_strequal(type, PLUGININTERFACE_STOPCOMMAND)) {
+            interface_manager.stop(args);
+         }
+      }
+   } else {
+      if(MMDAgent_strequal(type, MMDAGENT_COMMAND_PLUGINENABLE)) {
+         if(MMDAgent_strequal(args, PLUGININTERFACE_NAME)) {
+            enable = true;
+            mmdagent->sendMessage(MMDAGENT_EVENT_PLUGINENABLE, "%s", PLUGININTERFACE_NAME);
+         }
+      }
+   }
+}
 
-   /* initialize: initialize thread */
-   void initialize();
-
-   /* clear: free thread */
-   void clear();
-
-public:
-
-   /* VIManager_Thraed: thread constructor */
-   VIManager_Thread();
-
-   /* ~VIManager_Thread: thread destructor */
-   ~VIManager_Thread();
-
-   /* loadAndStart: load FST and start thread */
-   void loadAndStart(MMDAgent *mmdagent, const char *file);
-
-   /* stopAndRelease: stop thread and release */
-   void stopAndRelease();
-
-   /* run: main loop */
-   void run();
-
-   /* isRunning: check running */
-   bool isRunning();
-
-   /* enqueueBuffer: enqueue buffer to check */
-   void enqueueBuffer(const char *type, const char *args);
-
-   /* renderLog: render log message */
-   void renderLog();
-};
+/* extAppEnd: stop and free thread */
+EXPORT void extAppEnd(MMDAgent *mmdagent)
+{
+   interface_manager.stopAndRelease();
+}

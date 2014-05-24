@@ -39,75 +39,48 @@
 /* POSSIBILITY OF SUCH DAMAGE.                                       */
 /* ----------------------------------------------------------------- */
 
-/* VIManager_Event: input message buffer */
-typedef struct _VIManager_Event {
-   char *type;
-   char *args;
-   struct _VIManager_Event *next;
-} VIManager_Event;
+/* definitions */
 
-/* VIManager_EventQueue: queue of VIManager_Event */
-typedef struct _VIManager_EventQueue {
-   VIManager_Event *head;
-   VIManager_Event *tail;
-} VIManager_EventQueue;
+typedef struct _Interface_File {
+   char *name;
+   long ctime;
+   struct _Interface_File *next;
+} Interface_File;
 
-typedef struct _VIManager_Link {
-   VIManager vim;
-   struct _VIManager_Link *next;
-} VIManager_Link;
-
-/* VIManager_Thread: thread of VIManager */
-class VIManager_Thread
+/* Interface: Japanese TTS system */
+class Interface
 {
 private:
-
-   MMDAgent *m_mmdagent;
-
-   GLFWmutex m_mutex;
-   GLFWcond m_cond;
-   GLFWthread m_thread;
-
-   int m_count;
-
-   bool m_kill;
-
-   VIManager_EventQueue eventQueue; /* queue of input message */
-
-   VIManager m_vim;           /* main FST */
-   VIManager_Link *m_sub;     /* sub FST */
-   VIManager_Link *m_add;     /* add FST */
-   VIManager_Logger m_logger; /* logger */
-
-   /* initialize: initialize thread */
+   Interface_File *m_file;
+   char *m_dir;
+   char *m_file_name;
+   bool m_file_update;
+   /* initialize: initialize system */
    void initialize();
 
-   /* clear: free thread */
+   /* clear: free system */
    void clear();
 
 public:
 
-   /* VIManager_Thraed: thread constructor */
-   VIManager_Thread();
+   /* Interface: constructor */
+   Interface();
 
-   /* ~VIManager_Thread: thread destructor */
-   ~VIManager_Thread();
+   /* ~Interface: destructor */
+   ~Interface();
 
-   /* loadAndStart: load FST and start thread */
-   void loadAndStart(MMDAgent *mmdagent, const char *file);
+   /* load: load dictionary */
+   bool load(const char *dicDir, const char *config);
 
-   /* stopAndRelease: stop thread and release */
-   void stopAndRelease();
+   /* stop: */
+   void stop();
+   
+   /* getPhonemeSequence: get phoneme sequence */
+   void execute(const char *param2, const char *param3);
+   void executeLog(const char *param2, const char *param3);
 
-   /* run: main loop */
-   void run();
-
-   /* isRunning: check running */
-   bool isRunning();
-
-   /* enqueueBuffer: enqueue buffer to check */
-   void enqueueBuffer(const char *type, const char *args);
-
-   /* renderLog: render log message */
-   void renderLog();
+   void loopInit(const char *param3);
+   
+   void loopMain();
+   char *getUpdateFile();
 };

@@ -39,26 +39,30 @@
 /* POSSIBILITY OF SUCH DAMAGE.                                       */
 /* ----------------------------------------------------------------- */
 
-/* VIManager_Event: input message buffer */
-typedef struct _VIManager_Event {
-   char *type;
-   char *args;
-   struct _VIManager_Event *next;
-} VIManager_Event;
+/* definitions */
 
-/* VIManager_EventQueue: queue of VIManager_Event */
-typedef struct _VIManager_EventQueue {
-   VIManager_Event *head;
-   VIManager_Event *tail;
-} VIManager_EventQueue;
+#define INTERFACEMANAGER_INITIALNTHREAD 1 /* initial number of thread */
 
-typedef struct _VIManager_Link {
-   VIManager vim;
-   struct _VIManager_Link *next;
-} VIManager_Link;
+/* Interface_Link: thread list for Open JTalk */
+typedef struct _Interface_Link {
+   Interface_Thread interface_thread;
+   struct _Interface_Link *next;
+} Interface_Link;
 
-/* VIManager_Thread: thread of VIManager */
-class VIManager_Thread
+/* Interface_Event: input message buffer */
+typedef struct _Interface_Event {
+   char *event;
+   struct _Interface_Event *next;
+} Interface_Event;
+
+/* Interface_EventQueue: queue of Interface_Event */
+typedef struct _Interface_EventQueue {
+   Interface_Event *head;
+   Interface_Event *tail;
+} Interface_EventQueue;
+
+/* Interface_Manager: multi thread manager for Open JTalk */
+class Interface_Manager
 {
 private:
 
@@ -72,31 +76,30 @@ private:
 
    bool m_kill;
 
-   VIManager_EventQueue eventQueue; /* queue of input message */
+   Interface_EventQueue m_bufferQueue;
+   Interface_Link *m_list;
 
-   VIManager m_vim;           /* main FST */
-   VIManager_Link *m_sub;     /* sub FST */
-   VIManager_Link *m_add;     /* add FST */
-   VIManager_Logger m_logger; /* logger */
+   char *m_dicDir;
+   char *m_config;
 
-   /* initialize: initialize thread */
+   /* initialize: initialize */
    void initialize();
 
-   /* clear: free thread */
+   /* clear: clear */
    void clear();
 
 public:
 
-   /* VIManager_Thraed: thread constructor */
-   VIManager_Thread();
+   /* Interface_Manager: constructor */
+   Interface_Manager();
 
-   /* ~VIManager_Thread: thread destructor */
-   ~VIManager_Thread();
+   /* ~Interface_Manager: destructor */
+   ~Interface_Manager();
 
-   /* loadAndStart: load FST and start thread */
-   void loadAndStart(MMDAgent *mmdagent, const char *file);
+   /* loadAndStart: load and start thread */
+   void loadAndStart(MMDAgent *mmdagent, const char *dicDir, const char *config);
 
-   /* stopAndRelease: stop thread and release */
+   /* stopAndRelease: stop and release thread */
    void stopAndRelease();
 
    /* run: main loop */
@@ -105,9 +108,9 @@ public:
    /* isRunning: check running */
    bool isRunning();
 
-   /* enqueueBuffer: enqueue buffer to check */
-   void enqueueBuffer(const char *type, const char *args);
+   /* start: start  */
+   void start(const char *str);
 
-   /* renderLog: render log message */
-   void renderLog();
+   /* stop: stop */
+   void stop(const char *str);
 };

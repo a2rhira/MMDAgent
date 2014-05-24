@@ -140,6 +140,7 @@ static void mainThread(void *param)
 void VIManager_Thread::initialize()
 {
    m_sub = NULL;
+   m_add = NULL;
 
    m_mmdagent = NULL;
 
@@ -274,6 +275,7 @@ void VIManager_Thread::run()
    char oargs[MMDAGENT_MAXBUFLEN];
    InputArguments ia;
    VIManager_Link *l;
+   VIManager_Link *link;
 
    /* first epsilon step */
    while (m_logger.setTransition(m_vim.transition(VIMANAGER_EPSILON, NULL, otype, oargs)) == true) {
@@ -302,6 +304,14 @@ void VIManager_Thread::run()
 
       InputArguments_initialize(&ia, iargs);
 
+      if (MMDAgent_strequal(itype, MMDAGENT_COMMAND_FST_UPDATE) ){
+		  VIManager_Link *link = new VIManager_Link;
+          if(link->vim.load(iargs) ) {
+			  link->next = m_add;
+			  m_add = link;
+		  }
+	  }
+
       /* state transition with input symbol */
       m_logger.setTransition(m_vim.transition(itype, &ia, otype, oargs));
       if (MMDAgent_strequal(otype, VIMANAGER_EPSILON) == false)
@@ -314,6 +324,18 @@ void VIManager_Thread::run()
       }
 
       for(l = m_sub; l != NULL; l = l->next) {
+         l->vim.transition(itype, &ia, otype, oargs);
+         if (MMDAgent_strequal(otype, VIMANAGER_EPSILON) == false)
+            m_mmdagent->sendMessage(otype, "%s", oargs);
+
+         /* state transition with epsilon */
+         while (l->vim.transition(VIMANAGER_EPSILON, NULL, otype, oargs) != NULL) {
+            if (MMDAgent_strequal(otype, VIMANAGER_EPSILON) == false)
+               m_mmdagent->sendMessage(otype, "%s", oargs);
+         }
+      }
+
+      for(l = m_add; l != NULL; l = l->next) {
          l->vim.transition(itype, &ia, otype, oargs);
          if (MMDAgent_strequal(otype, VIMANAGER_EPSILON) == false)
             m_mmdagent->sendMessage(otype, "%s", oargs);

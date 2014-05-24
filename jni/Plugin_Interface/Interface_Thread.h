@@ -39,26 +39,17 @@
 /* POSSIBILITY OF SUCH DAMAGE.                                       */
 /* ----------------------------------------------------------------- */
 
-/* VIManager_Event: input message buffer */
-typedef struct _VIManager_Event {
-   char *type;
-   char *args;
-   struct _VIManager_Event *next;
-} VIManager_Event;
+/* definitions */
 
-/* VIManager_EventQueue: queue of VIManager_Event */
-typedef struct _VIManager_EventQueue {
-   VIManager_Event *head;
-   VIManager_Event *tail;
-} VIManager_EventQueue;
+#define INTERFACETHREAD_COMMANDLOOPSTART   "IF_CMD_LOOP_START"
+#define INTERFACETHREAD_COMMANDEXE         "IF_CMD_EXE"
+#define INTERFACETHREAD_COMMANDSTOP        "IF_CMD_STOP"
 
-typedef struct _VIManager_Link {
-   VIManager vim;
-   struct _VIManager_Link *next;
-} VIManager_Link;
+#define INTERFACETHREAD_TYPE_LOOP     "LOOP"
+#define INTERFACETHREAD_TYPE_COMMAND  "CMD"
 
-/* VIManager_Thread: thread of VIManager */
-class VIManager_Thread
+/* Interface_Thread: thread for Open JTalk */
+class Interface_Thread
 {
 private:
 
@@ -70,14 +61,14 @@ private:
 
    int m_count;
 
+   bool m_executing;
    bool m_kill;
 
-   VIManager_EventQueue eventQueue; /* queue of input message */
+   char *m_param1Buff;
+   char *m_param2Buff;
+   char *m_param3Buff;
 
-   VIManager m_vim;           /* main FST */
-   VIManager_Link *m_sub;     /* sub FST */
-   VIManager_Link *m_add;     /* add FST */
-   VIManager_Logger m_logger; /* logger */
+   Interface m_interface;
 
    /* initialize: initialize thread */
    void initialize();
@@ -87,27 +78,33 @@ private:
 
 public:
 
-   /* VIManager_Thraed: thread constructor */
-   VIManager_Thread();
+   /* Interface_Thraed: thread constructor */
+   Interface_Thread();
 
-   /* ~VIManager_Thread: thread destructor */
-   ~VIManager_Thread();
+   /* ~Interface_Thread: thread destructor */
+   ~Interface_Thread();
 
-   /* loadAndStart: load FST and start thread */
-   void loadAndStart(MMDAgent *mmdagent, const char *file);
+   /* loadAndStart: load models and start thread */
+   bool loadAndStart(MMDAgent *mmdagent, const char *dicDir, const char *config);
 
-   /* stopAndRelease: stop thread and release */
+   /* stopAndRelease: stop thread and free Open JTalk */
    void stopAndRelease();
 
-   /* run: main loop */
+   /* run: main thread loop for TTS */
    void run();
 
    /* isRunning: check running */
    bool isRunning();
 
-   /* enqueueBuffer: enqueue buffer to check */
-   void enqueueBuffer(const char *type, const char *args);
+   /* isExecuting: check speaking */
+   bool isExecuting();
 
-   /* renderLog: render log message */
-   void renderLog();
+   /* checkParameter: check parameter */
+   bool checkParameter(const char *param1);
+
+   /* start: start  */
+   void start(const char *param1, const char *param2, const char *param3);
+
+   /* stop: stop */
+   void stop();
 };
