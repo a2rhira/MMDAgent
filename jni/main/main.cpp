@@ -55,6 +55,7 @@
 #endif /* __APPLE__ */
 #ifdef __ANDROID__
 #include <jni.h>
+#include <MainNativeActivity.h>
 #include <errno.h>
 #include <android/sensor.h>
 #include <android_native_app_glue.h>
@@ -511,3 +512,51 @@ int main(int argc, char **argv)
    return result;
 }
 #endif /* !_WIN32 && !__APPLE__ && !__ANDROID__ */
+
+#ifdef __ANDROID__
+#define NATIVEJAVA_COMMAND  "hogehoge"
+
+jint JNICALL
+Java_com_example_mmdagent_MainNativeActivity_onStartToJNI( JNIEnv* env, jobject thiz)
+{
+   mmdagent->javaActivityReceiveMessageStart();
+   return 1;
+}
+
+jint JNICALL
+Java_com_example_mmdagent_MainNativeActivity_onStopToJNI( JNIEnv* env, jobject thiz)
+{
+    mmdagent->javaActivityReceiveMessageClear();
+   return 1;
+}
+
+int JNICALL
+Java_com_example_mmdagent_MainNativeActivity_sendMessageToJNI( JNIEnv* env, jobject thiz, jstring srcj)
+{
+    const char *src;
+
+    src = env->GetStringUTFChars(srcj, NULL);
+    if (src == NULL) return 0;
+
+    //xxxx
+    mmdagent->sendMessage(NATIVEJAVA_COMMAND, "%s", src);
+
+    env->ReleaseStringUTFChars(srcj, src);
+
+    return 1;
+}
+
+JNIEXPORT jobject JNICALL
+Java_com_example_mmdagent_MainNativeActivity_receiveMessageFromJNI( JNIEnv* env, jobject thiz)
+{
+    char *param;
+
+	param = mmdagent->javaActivityReceiveMessageFromJNI();
+
+    char cbuff[255] = {0};
+    strcpy(cbuff, param);
+    jstring jstr = env->NewStringUTF(cbuff);
+
+    return jstr;
+}
+#endif

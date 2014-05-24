@@ -2430,6 +2430,14 @@ void MMDAgent::procReceivedMessage(const char *type, const char *value)
          return;
       }
       stopLipSync(argv[0]);
+#ifdef __ANDROID__
+	} else if (MMDAgent_strequal(type, MMDAGENT_COMMAND_EXE_JAVA)) {
+	   if (num != 1) {
+		  m_logger->log("Error: %s: number of arguments should be 1.", type);
+		  return;
+	   }
+	   javaActivitySetParameter(argv[0]);
+#endif
    }
 }
 
@@ -2561,4 +2569,92 @@ void MMDAgent::procDropFileMessage(const char * file, int x, int y)
       else
          setBackground(file); /* change background without Ctrl-key */
    }
+}
+
+/* initialize */
+void MMDAgent::javaActivityInitialize()
+{
+   m_mutex = NULL;
+   m_cond = NULL;
+   m_count = 0;
+   m_param1Buff = NULL;
+}
+
+/* check running */
+int MMDAgent::javaActivityIsRunning()
+{
+   if( m_mutex == NULL || m_cond == NULL)
+      return GL_FALSE;
+   else
+      return GL_TRUE;
+}
+
+/* initialize */
+void MMDAgent::javaActivityReceiveMessageClear()
+{
+   if (m_cond != NULL)
+       glfwSignalCond(m_cond);
+
+   if(m_cond != NULL)
+ 	  glfwDestroyCond(m_cond);
+   if(m_mutex != NULL)
+	   glfwDestroyMutex(m_mutex);
+   glfwTerminate();
+
+   if(m_param1Buff) free(m_param1Buff);
+
+   javaActivityInitialize();
+}
+
+/* initialize */
+void MMDAgent::javaActivityReceiveMessageStart()
+{
+	javaActivityInitialize();
+
+   glfwInit();
+   m_mutex = glfwCreateMutex();
+   m_cond = glfwCreateCond();
+}
+
+
+/*  */
+void MMDAgent::javaActivitySetParameter(const char *param)
+{
+   /* check */
+   if(javaActivityIsRunning() == GL_FALSE)
+      return;
+   if(strlen(param) <= 0)
+      return;
+
+   /* wait buffer mutex */
+   glfwLockMutex(m_mutex);
+
+   /* save param1, param2, and param3 */
+   if(m_param1Buff) free(m_param1Buff);
+   m_param1Buff = MMDAgent_strdup(param);
+   m_count++;
+
+   /* start thread */
+   if(m_count <= 1)
+      glfwSignalCond(m_cond);
+
+   /* release buffer mutex */
+   glfwUnlockMutex(m_mutex);
+}
+
+char* MMDAgent::javaActivityReceiveMessageFromJNI()
+{
+    char *param;
+
+	glfwLockMutex(m_mutex);
+	while(m_count <= 0) {
+      glfwWaitCond(m_cond, m_mutex, GLFW_INFINITY);
+      if(javaActivityIsRunning() == GL_FALSE)
+		 return NULL;
+	}
+	param = MMDAgent_strdup(m_param1Buff);
+	m_count--;
+	glfwUnlockMutex(m_mutex);
+
+    return param;
 }

@@ -94,6 +94,7 @@
 #define MMDAGENT_COMMAND_PLUGINENABLE     "PLUGIN_ENABLE"
 #define MMDAGENT_COMMAND_PLUGINDISABLE    "PLUGIN_DISABLE"
 #define MMDAGENT_COMMAND_FST_UPDATE       "FST_UPDATE"
+#define MMDAGENT_COMMAND_EXE_JAVA         "EXECUTE"
 
 #define MMDAGENT_EVENT_MODELADD         "MODEL_EVENT_ADD"
 #define MMDAGENT_EVENT_MODELCHANGE      "MODEL_EVENT_CHANGE"
@@ -186,6 +187,11 @@ private:
    bool m_dispBulletBodyFlag;      /* true if bullet body is shown */
    bool m_dispModelDebug;          /* true if model debugger is on */
    bool m_holdMotion;              /* true if holding motion */
+
+   GLFWmutex m_mutex;
+   GLFWcond m_cond;
+   int m_count;
+   char *m_param1Buff;
 
    /* getNewModelId: return new model ID */
    int getNewModelId();
@@ -419,6 +425,13 @@ public:
 
    /* procDropFileMessage: process file drops message */
    void procDropFileMessage(const char *file, int x, int y);
+
+   void javaActivityInitialize();
+   int javaActivityIsRunning();
+   void javaActivityReceiveMessageClear();
+   void javaActivityReceiveMessageStart();
+   void javaActivitySetParameter(const char *param);
+   char* javaActivityReceiveMessageFromJNI();
 };
 
 #endif /* __mmdagent_h__ */

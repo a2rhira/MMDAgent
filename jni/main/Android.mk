@@ -6,7 +6,8 @@ LOCAL_MODULE           := main
 LOCAL_SRC_FILES        := main.cpp
 LOCAL_LDLIBS           := -landroid -lEGL -lGLESv1_CM
 LOCAL_STATIC_LIBRARIES := MMDAgent MMDFiles Bullet_Physics JPEG libpng zlib GLFW GLee
-LOCAL_C_INCLUDES       := $(LOCAL_PATH)/../Library_JPEG/include \
+LOCAL_C_INCLUDES       := $(LOCAL_PATH)/.. \
+                          $(LOCAL_PATH)/../Library_JPEG/include \
                           $(LOCAL_PATH)/../Library_Bullet_Physics/include \
                           $(LOCAL_PATH)/../Library_GLee/include \
                           $(LOCAL_PATH)/../Library_libpng/include \
