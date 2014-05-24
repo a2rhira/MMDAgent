@@ -33,9 +33,9 @@ LOCAL_CFLAGS     += -DMMDAGENT_DONTRENDERDEBUG \
                     -DMMDAGENT_DONTUSEMOUSE \
                     -DMMDAGENT_DONTUSEWINDOW \
                     -DMMDAGENT \
-                    -DMMDAGENT_OVERWRITEEXEFILE="\"/storage/sdcard0/Download/MMDAgent/MMDAgent.exe\"" \
-                    -DMMDAGENT_OVERWRITECONFIGFILE="\"/storage/sdcard0/Download/MMDAgent/MMDAgent.mdf\"" \
-                    -DMMDAGENT_OVERWRITESYSDATADIR="\"/storage/sdcard0/Download/MMDAgent/AppData\"" \
-                    -DMMDAGENT_OVERWRITEPLUGINDIR="\"/data/data/com.example.native_activity/lib\""
+					-DMMDAGENT_OVERWRITEEXEFILE="\"/mnt/sdcard/Download/MMDAgent/MMDAgent.exe\"" \
+					-DMMDAGENT_OVERWRITECONFIGFILE="\"/mnt/sdcard/Download/MMDAgent/MMDAgent.mdf\"" \
+					-DMMDAGENT_OVERWRITESYSDATADIR="\"/mnt/sdcard/Download/MMDAgent/AppData\"" \
+					-DMMDAGENT_OVERWRITEPLUGINDIR="\"/data/data/com.example.mmdagent/lib\""
 
 include $(BUILD_STATIC_LIBRARY)
